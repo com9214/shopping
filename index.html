@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7f2">
+  <title>장보기 목록 · 예산 계산기</title>
+  <style>
+    /* 기본 색과 글꼴을 정합니다. */
+    :root{color-scheme:light;--ink:#20332d;--muted:#687871;--green:#176b50;--green-dark:#0f503b;--paper:#f5f7f2;--white:#fff;--line:#dce5de;--red:#c62828;--soft:#e8f1eb}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+    button,input{font:inherit}
+    button{min-height:48px;border:0;border-radius:14px;padding:0 16px;font-weight:750;cursor:pointer;touch-action:manipulation}
+    button:focus-visible,input:focus-visible{outline:3px solid #83c8a5;outline-offset:2px}
+    .app{width:min(100%,520px);margin:0 auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom))}
+    header{margin:2px 2px 14px}.eyebrow{font-size:12px;letter-spacing:.08em;font-weight:800;color:var(--green);margin:0 0 3px}
+    h1{font-size:25px;line-height:1.2;margin:0;letter-spacing:-.04em}
+    .panel{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 5px 18px #193b2510}
+    .budget-row{display:flex;align-items:center;gap:10px}.budget-row label{font-weight:750;white-space:nowrap}
+    .money-input{width:100%;min-width:0;height:48px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;color:var(--ink);font-size:17px}
+    .budget-input-wrap{position:relative;flex:1;min-width:0}.budget-input-wrap input{padding-right:34px}.won-mark{position:absolute;right:12px;top:12px;color:var(--muted);pointer-events:none}
+    .summary-main{margin:16px 0 0;padding:14px;border-radius:16px;background:var(--soft)}.summary-label{font-size:13px;color:#52645b;font-weight:700}
+    .total{font-size:30px;line-height:1.15;font-weight:850;letter-spacing:-.04em;margin-top:3px;font-variant-numeric:tabular-nums}.total.over{color:var(--red)}
+    .remaining{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:14px;color:#42564c}.remaining strong{font-variant-numeric:tabular-nums}
+    .alert{margin:10px 0 0;color:var(--red);font-weight:800;font-size:14px}.alert[hidden]{display:none}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}.section-title h2{font-size:18px;margin:0;letter-spacing:-.02em}.count{font-size:13px;color:var(--muted);font-weight:700}
+    .form-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(66px,.7fr) minmax(85px,1fr);gap:8px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin:0 0 5px 2px}.field input{height:48px;padding:0 10px;border:1px solid var(--line);border-radius:12px;width:100%;min-width:0;background:#fff;font-size:16px}
+    input[type=number]{font-variant-numeric:tabular-nums}.add-button{width:100%;margin-top:10px;background:var(--green);color:#fff;font-size:16px}.add-button:active,.primary:active{background:var(--green-dark)}
+    .form-error{min-height:0;margin:8px 2px 0;color:var(--red);font-size:14px;font-weight:700}.form-error:empty{display:none}
+    .tool-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:9px;margin:12px 0 14px}.tool-stack{display:grid;gap:8px;min-width:0}.csv-control{min-width:0;text-align:center;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.csv-control .file-name{grid-column:1}.tool-row button{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);font-size:14px;padding:0 8px}#clear-all{color:#8a3535}.file-name{display:block;margin:5px 3px 0;color:var(--muted);font-size:12px;line-height:1.35;overflow-wrap:anywhere}.csv-status{margin:-4px 2px 12px;color:var(--green-dark);font-size:13px;font-weight:700}.csv-status.error{color:var(--red)}.csv-status:empty{display:none}
+    .list{display:grid;gap:9px}.item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}.item-top{display:grid;grid-template-columns:32px minmax(0,1fr) 44px;align-items:center;gap:8px}.check{width:26px;height:26px;accent-color:var(--green);margin:0;cursor:pointer}.item-name{min-width:0;font-weight:800;overflow-wrap:anywhere}.delete{width:44px;min-height:44px;padding:0;background:#f6f0ee;color:#82463d;font-size:13px;border-radius:12px}.item-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 0 40px}.edit-field{min-width:0}.edit-field label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin:0 0 3px 2px}.edit-field input{width:100%;min-width:0;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 9px;font-size:15px;background:#fbfcfa}.subtotal{margin:10px 0 0 40px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}.subtotal strong{font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+    .item.checked{background:#f0f2ef;border-color:#e5e8e4}.item.checked .item-name{text-decoration:line-through;color:#858d88}.item.checked .subtotal strong{color:#757d78}.item.checked .edit-field input{color:#858d88;background:#f2f3f1}
+    .empty{padding:24px 12px;text-align:center;border:1px dashed #b9c8be;border-radius:16px;color:var(--muted);background:#ffffff8c}.empty strong{display:block;color:var(--ink);margin-bottom:4px}
+    .split-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.split-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px}.split-card span{display:block;font-size:12px;color:var(--muted);font-weight:700}.split-card strong{display:block;margin-top:3px;font-size:19px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+    .privacy{text-align:center;color:#77837c;font-size:12px;margin:14px 0 0}
+    @media(max-width:350px){.app{padding-left:12px;padding-right:12px}.panel{padding:13px}.form-grid{grid-template-columns:minmax(0,1.15fr) minmax(58px,.65fr) minmax(76px,1fr);gap:6px}.field input{padding:0 7px;font-size:15px}.item-bottom,.subtotal{margin-left:36px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header><p class="eyebrow">마트에서 한 손으로</p><h1>장보기 목록</h1></header>
+
+    <!-- 예산과 현재 지출을 가장 먼저 볼 수 있게 모았습니다. -->
+    <section class="panel" aria-label="예산과 합계">
+      <div class="budget-row"><label for="budget">내 예산</label><div class="budget-input-wrap"><input class="money-input" id="budget" type="number" min="0" step="1000" inputmode="numeric" placeholder="예산 입력"><span class="won-mark">원</span></div></div>
+      <div class="summary-main"><div class="summary-label">현재 예상 합계</div><div class="total" id="total">0원</div><div class="remaining"><span id="budget-caption">예산을 입력해 주세요</span><strong id="remaining">—</strong></div><p class="alert" id="budget-alert" role="alert" hidden></p></div>
+    </section>
+
+    <!-- 품목을 추가하는 입력칸입니다. -->
+    <section class="panel" aria-labelledby="add-heading">
+      <div class="section-title"><h2 id="add-heading">살 물건 추가</h2></div>
+      <form id="item-form" novalidate>
+        <div class="form-grid">
+          <div class="field"><label for="name">품목</label><input id="name" type="text" maxlength="60" placeholder="예: 우유" autocomplete="off"></div>
+          <div class="field"><label for="quantity">수량</label><input id="quantity" type="number" min="1" step="1" inputmode="numeric" value="1"></div>
+          <div class="field"><label for="price">단가 (원)</label><input id="price" type="number" min="0" step="1000" inputmode="numeric" placeholder="예: 2500"></div>
+        </div>
+        <button class="add-button" type="submit">＋ 목록에 추가</button><p class="form-error" id="form-error" role="alert" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- 목록과 담기 상태를 표시합니다. -->
+    <section aria-labelledby="list-heading">
+      <div class="section-title"><h2 id="list-heading">장보기 목록</h2><span class="count" id="item-count">0개</span></div>
+      <div class="tool-row">
+        <div class="tool-stack">
+          <div class="csv-control"><button id="choose-csv" type="button">CSV 불러오기</button><button id="save-csv" type="button">CSV 저장</button><input id="csv-file" type="file" accept=".csv,text/csv" hidden><span class="file-name" id="csv-filename">선택된 파일 없음</span></div>
+          <button id="examples" type="button">예제 목록 불러오기</button>
+        </div>
+        <button id="clear-all" type="button">전체 비우기</button>
+      </div>
+      <p class="csv-status" id="csv-status" role="status" aria-live="polite"></p>
+      <div class="list" id="list" aria-live="polite"></div>
+    </section>
+
+    <!-- 장바구니에 담은 금액과 남은 금액을 따로 보여줍니다. -->
+    <section class="panel" aria-label="담은 금액 요약" style="margin-top:14px">
+      <div class="split-summary"><div class="split-card"><span>담은 금액</span><strong id="checked-total">0원</strong></div><div class="split-card"><span>안 담은 금액</span><strong id="unchecked-total">0원</strong></div></div>
+    </section>
+    <p class="privacy">목록은 이 브라우저에만 저장됩니다.</p>
+  </main>
+  <script>
+    // 저장할 장소와 예제 목록을 준비합니다. 개인정보나 인터넷 연결은 사용하지 않습니다.
+    (()=>{
+      const STORAGE_KEY='shopping-budget-list-v1';
+      const examples=[
+        {name:'우유',quantity:2,price:2500},{name:'식빵',quantity:1,price:3200},
+        {name:'달걀',quantity:1,price:6500},{name:'바나나',quantity:1,price:4500},
+        {name:'두부',quantity:2,price:1800},{name:'양파',quantity:3,price:900},
+        {name:'세제',quantity:1,price:7900},{name:'생수',quantity:1,price:4200}
+      ];
+      const $=id=>document.getElementById(id);
+      const form=$('item-form'), nameInput=$('name'), quantityInput=$('quantity'), priceInput=$('price');
+      let state={budget:'',items:[]};
+
+      // 브라우저 저장 내용을 읽습니다. 읽을 수 없는 데이터는 빈 목록으로 엽니다.
+      function load(){
+        try{
+          const raw=localStorage.getItem(STORAGE_KEY); if(!raw)return;
+          const data=JSON.parse(raw); if(!data||!Array.isArray(data.items))return;
+          state.budget=data.budget===null?'':String(data.budget);
+          state.items=data.items.filter(item=>item&&typeof item.name==='string'&&Number.isInteger(Number(item.quantity))&&Number(item.quantity)>=1&&Number.isFinite(Number(item.price))&&Number(item.price)>0)
+            .map(item=>({id:String(item.id||makeId()),name:item.name,quantity:Number(item.quantity),price:Number(item.price),checked:Boolean(item.checked)}));
+        }catch(error){state={budget:'',items:[]};}
+      }
+      // 현재 목록과 예산을 브라우저 안에 저장합니다.
+      function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(error){$('form-error').textContent='브라우저 저장 공간에 저장하지 못했습니다.';}}
+      function makeId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+      function won(value){return Math.round(value).toLocaleString('ko-KR')+'원'}
+      function amount(item){return item.quantity*item.price}
+      function escapeText(value){return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+
+      // 합계, 남은 예산, 담은 금액을 다시 계산해 화면에 표시합니다.
+      function render(){
+        const total=state.items.reduce((sum,item)=>sum+amount(item),0);
+        const checked=state.items.filter(item=>item.checked).reduce((sum,item)=>sum+amount(item),0);
+        const unchecked=total-checked;
+        $('total').textContent=won(total); $('checked-total').textContent=won(checked); $('unchecked-total').textContent=won(unchecked);
+        const hasBudget=state.budget!==''&&Number.isFinite(Number(state.budget))&&Number(state.budget)>=0;
+        if($('budget').value!==state.budget)$('budget').value=state.budget;
+        $('total').classList.toggle('over',hasBudget&&total>Number(state.budget));
+        $('budget-alert').hidden=true;
+        if(hasBudget){
+          const diff=Number(state.budget)-total; $('budget-caption').textContent=diff>=0?'남은 예산':'예산 초과'; $('remaining').textContent=won(Math.abs(diff));
+          if(diff<0){$('budget-alert').textContent=`예산을 ${won(-diff)} 초과했습니다`;$('budget-alert').hidden=false;}
+        }else{$('budget-caption').textContent='예산을 입력해 주세요';$('remaining').textContent='—';}
+        $('item-count').textContent=`${state.items.length}개`;
+        if(!state.items.length){$('list').innerHTML='<div class="empty"><strong>아직 담을 물건이 없어요</strong>위 입력칸에서 살 물건을 추가해 주세요.</div>';return;}
+        // 담지 않은 품목을 먼저 보여주고, 체크한 품목은 목록 아래로 보냅니다.
+        const visibleItems=[...state.items].sort((a,b)=>Number(a.checked)-Number(b.checked));
+        $('list').innerHTML=visibleItems.map(item=>`<article class="item ${item.checked?'checked':''}" data-id="${escapeText(item.id)}">
+          <div class="item-top"><input class="check" type="checkbox" aria-label="${escapeText(item.name)} 장바구니에 담음" ${item.checked?'checked':''}><div class="item-name">${escapeText(item.name)}</div><button class="delete" type="button" aria-label="${escapeText(item.name)} 삭제">삭제</button></div>
+          <div class="item-bottom"><div class="edit-field"><label>수량</label><input class="edit-quantity" type="number" min="1" step="1" inputmode="numeric" value="${item.quantity}" aria-label="${escapeText(item.name)} 수량"></div><div class="edit-field"><label>단가 (원)</label><input class="edit-price" type="number" min="0" step="1000" inputmode="numeric" value="${item.price}" aria-label="${escapeText(item.name)} 단가"></div></div>
+          <div class="subtotal"><span>수량 × 단가</span><strong>${won(amount(item))}</strong></div></article>`).join('');
+      }
+      function showError(message){$('form-error').textContent=message;}
+
+      // 입력값을 확인하고 새 품목을 추가합니다.
+      form.addEventListener('submit',event=>{
+        event.preventDefault(); showError('');
+        const name=nameInput.value.trim(), quantityText=quantityInput.value.trim(), priceText=priceInput.value.trim();
+        const quantity=Number(quantityText), price=Number(priceText);
+        if(!name){showError('품목 이름을 입력해 주세요.');nameInput.focus();return;}
+        if(!quantityText||!Number.isInteger(quantity)||quantity<1){showError('수량은 1 이상의 정수로 입력해 주세요.');quantityInput.focus();return;}
+        if(!priceText||!Number.isFinite(price)||price<=0){showError('단가는 1원 이상의 숫자로 입력해 주세요.');priceInput.focus();return;}
+        state.items.push({id:makeId(),name,quantity,price,checked:false});save();render();
+        nameInput.value='';quantityInput.value='1';priceInput.value='';nameInput.focus();
+      });
+      // 예산은 0원도 허용하며, 비우면 예산 미설정으로 처리합니다.
+      $('budget').addEventListener('input',event=>{
+        const value=event.target.value;
+        if(value===''||(Number.isFinite(Number(value))&&Number(value)>=0)){state.budget=value;save();render();}
+      });
+      // 목록 안의 체크, 수정, 삭제 버튼 동작을 처리합니다.
+      $('list').addEventListener('change',event=>{
+        const card=event.target.closest('.item');if(!card)return;
+        const item=state.items.find(entry=>entry.id===card.dataset.id);if(!item)return;
+        if(event.target.classList.contains('check')){item.checked=event.target.checked;save();render();return;}
+        if(event.target.classList.contains('edit-quantity')||event.target.classList.contains('edit-price')){
+          const q=card.querySelector('.edit-quantity').value.trim(),p=card.querySelector('.edit-price').value.trim();
+          const quantity=Number(q),price=Number(p);
+          if(!q||!Number.isInteger(quantity)||quantity<1){showError('수량은 1 이상의 정수로 입력해 주세요.');render();return;}
+          if(!p||!Number.isFinite(price)||price<=0){showError('단가는 1원 이상의 숫자로 입력해 주세요.');render();return;}
+          showError('');item.quantity=quantity;item.price=price;save();render();
+        }
+      });
+      $('list').addEventListener('click',event=>{
+        const button=event.target.closest('.delete');if(!button)return;
+        const card=button.closest('.item');state.items=state.items.filter(item=>item.id!==card.dataset.id);save();render();
+      });
+      // CSV 한 줄에서 쉼표와 따옴표로 감싼 품목명을 읽습니다.
+      function parseCSVLine(line){
+        const cells=[];let cell='',quoted=false,closedQuote=false;
+        for(let i=0;i<line.length;i++){
+          const char=line[i];
+          if(quoted){
+            if(char==='"'&&line[i+1]==='"'){cell+='"';i++;}
+            else if(char==='"'){quoted=false;closedQuote=true;}
+            else cell+=char;
+          }else if(char===','){
+            cells.push(cell.trim());cell='';closedQuote=false;
+          }else if(char==='"'){
+            if(cell.trim()!==''||closedQuote)throw new Error('따옴표 위치가 올바르지 않습니다.');
+            cell='';quoted=true;
+          }else{
+            if(closedQuote&&char.trim()!=='')throw new Error('따옴표 뒤에는 쉼표만 올 수 있습니다.');
+            cell+=char;
+          }
+        }
+        if(quoted)throw new Error('따옴표가 닫히지 않았습니다.');
+        cells.push(cell.trim());return cells;
+      }
+      // 파일의 모든 줄을 먼저 확인합니다. 오류가 있으면 일부만 추가하지 않습니다.
+      function readShoppingCSV(text){
+        const rows=text.replace(/^\uFEFF/,'').split(/\r?\n/);const parsed=[];const errors=[];let firstData=true;
+        rows.forEach((line,index)=>{
+          if(!line.trim())return;
+          let cells;
+          try{cells=parseCSVLine(line);}catch(error){errors.push(`${index+1}줄: ${error.message}`);firstData=false;return;}
+          if(firstData&&cells.length===3&&cells[0]==='품목'&&cells[1]==='수량'&&cells[2]==='단가'){firstData=false;return;}
+          firstData=false;
+          if(cells.length!==3){errors.push(`${index+1}줄: 열은 품목, 수량, 단가 순서로 3개여야 합니다.`);return;}
+          const [name,quantityText,priceText]=cells;const quantity=Number(quantityText),price=Number(priceText);
+          if(!name){errors.push(`${index+1}줄: 품목 이름이 비어 있습니다.`);return;}
+          if(!/^\d+$/.test(quantityText)||!Number.isInteger(quantity)||quantity<1){errors.push(`${index+1}줄: 수량은 1 이상의 정수여야 합니다.`);return;}
+          if(!/^\d+$/.test(priceText)||!Number.isFinite(price)||price<1){errors.push(`${index+1}줄: 단가는 1 이상의 숫자여야 합니다.`);return;}
+          parsed.push({name,quantity,price});
+        });
+        return {parsed,errors};
+      }
+      // 선택한 CSV를 확인한 뒤, 문제가 없을 때에만 목록에 한꺼번에 추가합니다.
+      $('choose-csv').addEventListener('click',()=>$('csv-file').click());
+      $('csv-file').addEventListener('change',async event=>{
+        const file=event.target.files[0];if(!file)return;
+        $('csv-filename').textContent=file.name;$('csv-status').classList.remove('error');$('csv-status').textContent='';
+        if(!file.name.toLowerCase().endsWith('.csv')){$('csv-status').textContent='CSV 파일(.csv)만 불러올 수 있습니다.';$('csv-status').classList.add('error');event.target.value='';return;}
+        try{
+          const result=readShoppingCSV(await file.text());
+          if(result.errors.length){$('csv-status').textContent='불러오지 못했습니다. '+result.errors.join(' ');$('csv-status').classList.add('error');}
+          else if(!result.parsed.length){$('csv-status').textContent='파일에 불러올 품목이 없습니다.';$('csv-status').classList.add('error');}
+          else{state.items.push(...result.parsed.map(item=>({...item,id:makeId(),checked:false})));save();render();$('csv-status').textContent=`${result.parsed.length}개 품목을 목록에 추가했습니다.`;}
+        }catch(error){$('csv-status').textContent='파일을 읽지 못했습니다. CSV 형식과 문자 인코딩을 확인해 주세요.';$('csv-status').classList.add('error');}
+        event.target.value='';
+      });
+      // 현재 품목 목록을 UTF-8 CSV 파일로 저장합니다.
+      function csvCell(value){
+        const text=String(value);
+        return /[",\r\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
+      }
+      $('save-csv').addEventListener('click',()=>{
+        const lines=[['품목','수량','단가'],...state.items.map(item=>[item.name,item.quantity,item.price])];
+        const csv='\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+        const url=URL.createObjectURL(blob);const link=document.createElement('a');
+        const date=new Date().toISOString().slice(0,10);
+        link.href=url;link.download=`장보기_목록_${date}.csv`;document.body.appendChild(link);link.click();link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+        $('csv-status').classList.remove('error');$('csv-status').textContent=`${state.items.length}개 품목을 CSV 파일로 저장했습니다.`;
+      });
+      // 예제 버튼은 목록을 바꾸기 전에 확인합니다.
+      $('examples').addEventListener('click',()=>{
+        if(state.items.length&&!confirm('현재 목록을 예제 8개로 바꿀까요?'))return;
+        state.items=examples.map(item=>({...item,id:makeId(),checked:false}));save();render();
+      });
+      // 전체 비우기 전에 한 번 더 확인합니다.
+      $('clear-all').addEventListener('click',()=>{
+        if(!state.items.length&&state.budget===''){alert('비울 목록이 없습니다.');return;}
+        if(!confirm('목록과 예산을 모두 지울까요?'))return;
+        state={budget:'',items:[]};save();showError('');render();
+      });
+      load();render();
+    })();
+  </script>
+</body>
+</html>
+
+
